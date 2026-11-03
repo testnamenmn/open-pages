@@ -1,0 +1,121 @@
+import { WidgetInstance, widgetSchemas, ConfigField } from '../../types/schema';
+import { Trash2 } from 'lucide-react';
+
+interface Props {
+  widget: WidgetInstance;
+  onUpdate: (config: Record<string, unknown>) => void;
+  onRemove: () => void;
+}
+
+export default function WidgetConfigPanel({ widget, onUpdate, onRemove }: Props) {
+  const schema = widgetSchemas[widget.type];
+
+  const handleChange = (field: ConfigField, value: unknown) => {
+    let parsed: unknown = value;
+    if (field.type === 'number') {
+      parsed = Number(value);
+    }
+    onUpdate({ [field.key]: parsed });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Widget header */}
+      <div className="flex items-center gap-3 p-3 bg-surface-3/50 rounded-lg border border-white/5">
+        <span className="text-2xl">{schema.icon}</span>
+        <div className="flex-1">
+          <p className="text-sm font-medium text-white">{schema.label}</p>
+          <p className="text-[10px] text-gray-500">{schema.description}</p>
+        </div>
+      </div>
+
+      {/* Connector badge */}
+      {widget.connector && (
+        <div className="flex items-center gap-2 px-3 py-2 bg-brand-600/10 border border-brand-500/20 rounded-lg">
+          <div className="w-2 h-2 rounded-full bg-accent-green animate-pulse" />
+          <span className="text-xs text-brand-300">
+            Connected via {widget.connector.charAt(0).toUpperCase() + widget.connector.slice(1)}
+          </span>
+        </div>
+      )}
+
+      {/* Config fields */}
+      <div className="space-y-3">
+        <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">Configuration</p>
+        {schema.configFields.map((field) => (
+          <div key={field.key}>
+            <label className="text-xs text-gray-400 mb-1 block">{field.label}</label>
+            {field.type === 'text' && (
+              <input
+                type="text"
+                value={String(widget.config[field.key] ?? field.default)}
+                onChange={(e) => handleChange(field, e.target.value)}
+                className="w-full px-3 py-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/50"
+              />
+            )}
+            {field.type === 'number' && (
+              <input
+                type="number"
+                value={Number(widget.config[field.key] ?? field.default)}
+                onChange={(e) => handleChange(field, e.target.value)}
+                className="w-full px-3 py-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/50"
+              />
+            )}
+            {field.type === 'color' && (
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={String(widget.config[field.key] ?? field.default)}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  className="w-8 h-8 rounded border border-white/10 bg-transparent cursor-pointer"
+                />
+                <input
+                  type="text"
+                  value={String(widget.config[field.key] ?? field.default)}
+                  onChange={(e) => handleChange(field, e.target.value)}
+                  className="flex-1 px-3 py-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white font-mono focus:outline-none focus:border-brand-500/50"
+                />
+              </div>
+            )}
+            {field.type === 'select' && field.options && (
+              <select
+                value={String(widget.config[field.key] ?? field.default)}
+                onChange={(e) => handleChange(field, e.target.value)}
+                className="w-full px-3 py-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/50"
+              >
+                {field.options.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            )}
+            {field.type === 'boolean' && (
+              <button
+                onClick={() => handleChange(field, !widget.config[field.key])}
+                className={`w-9 h-5 rounded-full transition-all ${
+                  widget.config[field.key] ? 'bg-brand-500' : 'bg-surface-4'
+                }`}
+              >
+                <div
+                  className={`w-3.5 h-3.5 rounded-full bg-white transition-transform ${
+                    widget.config[field.key] ? 'translate-x-[18px]' : 'translate-x-[3px]'
+                  }`}
+                />
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Remove button */}
+      <button
+        onClick={onRemove}
+        className="w-full flex items-center justify-center gap-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded-lg text-xs text-red-400 hover:bg-red-500/20 transition-all"
+      >
+        <Trash2 size={12} />
+        Remove Widget
+      </button>
+    </div>
+  );
+}
