@@ -38,7 +38,7 @@ export default function Landing() {
             transition={{ delay: 0.1 }}
             className="text-4xl sm:text-5xl lg:text-6xl font-black text-white leading-tight mb-5"
           >
-            Build Your
+            Build Your Awesome Page
             <br />
             <span className="gradient-text">Open Page</span>
           </motion.h1>
