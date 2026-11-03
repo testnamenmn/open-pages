@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useBuilder } from '../store/BuilderContext';
 import { widgetSchemas, WidgetType } from '../types/schema';
 import WidgetRenderer from '../components/builder/WidgetRenderer';
 import WidgetConfigPanel from '../components/builder/WidgetConfigPanel';
+import PublishModal from '../components/builder/PublishModal';
 import {
   Plus,
   Trash2,
@@ -16,6 +18,7 @@ import {
   Palette,
   FileText,
   ChevronDown,
+  Globe,
 } from 'lucide-react';
 
 type Tab = 'widgets' | 'theme' | 'settings';
@@ -23,8 +26,10 @@ type Tab = 'widgets' | 'theme' | 'settings';
 export default function Builder() {
   const { state, dispatch } = useBuilder();
   const { page, selectedWidgetId } = state;
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('widgets');
   const [showPreview, setShowPreview] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
   const selectedWidget = page.widgets.find((w) => w.id === selectedWidgetId);
@@ -52,6 +57,11 @@ export default function Builder() {
     const type = e.dataTransfer.getData('widgetType') as WidgetType;
     if (type) addWidget(type);
     setDragOverIndex(null);
+  };
+
+  const handlePublished = (slug: string) => {
+    setShowPublishModal(false);
+    navigate(`/p/${slug}`);
   };
 
   const widgetTypes = Object.values(widgetSchemas);
@@ -133,8 +143,11 @@ export default function Builder() {
               <Eye size={12} />
               Preview
             </button>
-            <button className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-500 to-accent-purple rounded-lg text-xs text-white font-medium hover:opacity-90">
-              <Link2 size={12} />
+            <button
+              onClick={() => setShowPublishModal(true)}
+              className="flex items-center gap-2 px-3 py-2 bg-gradient-to-r from-brand-500 to-accent-purple rounded-lg text-xs text-white font-medium hover:opacity-90"
+            >
+              <Globe size={12} />
               Publish
             </button>
           </div>
@@ -244,6 +257,13 @@ export default function Builder() {
           {activeTab === 'settings' && <PageSettingsPanel />}
         </div>
       </aside>
+
+      {/* Publish Modal */}
+      <PublishModal
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onPublished={handlePublished}
+      />
     </div>
   );
 }

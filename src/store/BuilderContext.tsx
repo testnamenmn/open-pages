@@ -1,5 +1,6 @@
-import { createContext, useContext, useReducer, ReactNode } from 'react';
+import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { OpenPage, WidgetInstance, PageTheme, WidgetType, widgetSchemas } from '../types/schema';
+import { storage } from '../utils/storage';
 
 interface BuilderState {
   page: OpenPage;
@@ -133,6 +134,19 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     selectedWidgetId: null,
     isDragging: false,
   });
+
+  // Load saved page on mount
+  useEffect(() => {
+    const savedPage = storage.getCurrentPage();
+    if (savedPage) {
+      dispatch({ type: 'LOAD_TEMPLATE', payload: savedPage });
+    }
+  }, []);
+
+  // Persist page changes to localStorage
+  useEffect(() => {
+    storage.saveCurrentPage(state.page);
+  }, [state.page]);
 
   return <BuilderContext.Provider value={{ state, dispatch }}>{children}</BuilderContext.Provider>;
 }

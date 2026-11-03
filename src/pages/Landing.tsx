@@ -68,11 +68,11 @@ export default function Landing() {
               <ArrowRight size={14} className="group-hover:translate-x-0.5 transition-transform" />
             </Link>
             <Link
-              to="/builder"
+              to="/my-pages"
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-gray-300 font-medium border border-white/10 hover:bg-white/5 transition-all"
             >
               <Layout size={16} />
-              Empty Canvas
+              My Pages
             </Link>
           </motion.div>
         </div>
@@ -113,6 +113,64 @@ export default function Landing() {
                 <span className="text-2xl mb-2 block">{schema.icon}</span>
                 <p className="text-xs font-medium text-white">{schema.label}</p>
                 <p className="text-[10px] text-gray-500 mt-1 font-mono">{schema.type}</p>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className="py-20 px-4">
+        <div className="max-w-5xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-10"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+              Publish in 3 Steps
+            </h2>
+            <p className="text-gray-400 text-sm max-w-lg mx-auto">
+              From template to live page in under 2 minutes
+            </p>
+          </motion.div>
+
+          <div className="grid sm:grid-cols-3 gap-6">
+            {[
+              {
+                step: '1',
+                title: 'Choose a Template',
+                desc: 'Pick from Fitness, Developer, Polymath, or start from scratch',
+                icon: '📚',
+              },
+              {
+                step: '2',
+                title: 'Customize',
+                desc: 'Drag widgets, tweak colors, add your data — no code required',
+                icon: '🎨',
+              },
+              {
+                step: '3',
+                title: 'Publish',
+                desc: 'Get your vanity URL and share it with the world',
+                icon: '🚀',
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="glass-card rounded-xl p-6 text-center relative"
+              >
+                <div className="absolute -top-3 -left-3 w-8 h-8 rounded-full bg-gradient-to-br from-brand-500 to-accent-purple flex items-center justify-center text-white font-bold text-sm">
+                  {item.step}
+                </div>
+                <span className="text-4xl mb-3 block">{item.icon}</span>
+                <h3 className="text-sm font-semibold text-white mb-2">{item.title}</h3>
+                <p className="text-xs text-gray-500">{item.desc}</p>
               </motion.div>
             ))}
           </div>

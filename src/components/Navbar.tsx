@@ -11,8 +11,8 @@ export default function Navbar() {
     { to: '/', label: 'Home', icon: Sparkles },
     { to: '/templates', label: 'Templates', icon: Layers },
     { to: '/builder', label: 'Builder', icon: Layout },
+    { to: '/my-pages', label: 'My Pages', icon: Share2 },
     { to: '/connectors', label: 'Connectors', icon: Key },
-    { to: '/share', label: 'Share', icon: Share2 },
   ];
 
   const isActive = (path: string) => location.pathname === path;

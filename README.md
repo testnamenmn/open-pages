@@ -42,12 +42,15 @@ Inspired by the evolution of "open pages" from startup revenue transparency to p
 - **Layout options** — grid, masonry, list
 - **Border radius** — sm, md, lg
 
-### 🌐 Public Sharing
+### 🌐 Public Sharing & Publishing
 - **Vanity URLs** — `openpages.io/your-name`
+- **One-click publish** — from template to live page in 2 minutes
+- **My Pages dashboard** — manage all your published pages
 - **SEO settings** — meta title, description
 - **Social sharing** — Twitter, LinkedIn, copy link
 - **Embed code** — iframe for your website
 - **Public/private toggle** — control visibility
+- **Auto-save** — all changes persist to localStorage
 
 ## 🚀 Quick Start
 

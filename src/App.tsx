@@ -6,6 +6,8 @@ import Builder from './pages/Builder';
 import Templates from './pages/Templates';
 import Connectors from './pages/Connectors';
 import Share from './pages/Share';
+import PublicPage from './pages/PublicPage';
+import MyPages from './pages/MyPages';
 
 function App() {
   return (
@@ -19,6 +21,8 @@ function App() {
             <Route path="/templates" element={<Templates />} />
             <Route path="/connectors" element={<Connectors />} />
             <Route path="/share" element={<Share />} />
+            <Route path="/my-pages" element={<MyPages />} />
+            <Route path="/p/:slug" element={<PublicPage />} />
           </Routes>
         </div>
       </Router>
