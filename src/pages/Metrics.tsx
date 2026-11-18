@@ -143,7 +143,7 @@ function PageMetrics({ page }: { page: OpenPage }) {
         <p className="text-sm text-gray-500">No metrics yet. Create your first one below.</p>
       )}
 
-      <ApiAccess pageId={page.dbId!} exampleMetric={list[0]?.key} />
+      <ApiAccess pageId={page.dbId!} exampleMetric={list[0]?.key} metrics={list.map((m) => ({ key: m.key, label: m.label, kind: m.kind }))} onLogged={reload} />
 
       <div className="glass-card rounded-xl p-4 border border-white/5">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">New metric</p>

@@ -7,14 +7,42 @@ interface Props {
   pageId: string;
   /** Metric key used in the copy-paste example (falls back to "weight"). */
   exampleMetric?: string;
+  /** Metrics available for the in-app key test. */
+  metrics?: { key: string; label: string; kind: 'number' | 'checkin' }[];
+  /** Called after a successful test entry so the screen can refresh. */
+  onLogged?: () => void;
 }
 
-export default function ApiAccess({ pageId, exampleMetric }: Props) {
+export default function ApiAccess({ pageId, exampleMetric, metrics = [], onLogged }: Props) {
   const [info, setInfo] = useState<ApiKeyInfo | null | undefined>(undefined); // undefined = loading
   const [fresh, setFresh] = useState<string | null>(null); // plaintext key, shown once
   const [copied, setCopied] = useState<'key' | 'curl' | null>(null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
+  const [testMetric, setTestMetric] = useState('');
+  const [testValue, setTestValue] = useState('1');
+  const [testResult, setTestResult] = useState<{ ok: boolean; status: number; text: string } | null>(null);
+  const activeMetric = metrics.find((m) => m.key === testMetric) ?? metrics[0];
+
+  const sendTest = async () => {
+    if (!fresh || !activeMetric) return;
+    setBusy(true);
+    setTestResult(null);
+    try {
+      const res = await fetch('/api/metric', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${fresh}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(activeMetric.kind === 'checkin' ? { metric: activeMetric.key } : { metric: activeMetric.key, value: Number(testValue) }),
+      });
+      const text = (await res.text()).slice(0, 300);
+      setTestResult({ ok: res.ok, status: res.status, text });
+      if (res.ok) onLogged?.();
+    } catch (e) {
+      setTestResult({ ok: false, status: 0, text: (e as Error).message });
+    } finally {
+      setBusy(false);
+    }
+  };
 
   useEffect(() => {
     setFresh(null);
@@ -102,6 +130,34 @@ export default function ApiAccess({ pageId, exampleMetric }: Props) {
                   {copied === 'key' ? <Check size={16} /> : <Copy size={16} />}
                 </button>
               </div>
+            </div>
+          )}
+
+          {fresh && metrics.length > 0 && (
+            <div className="mb-3 p-3 rounded-lg bg-white/5 border border-white/10" data-testid="key-test">
+              <p className="text-xs text-gray-300 mb-2">
+                <strong className="text-white">Test this key now</strong> — sends one real entry through the API using the key above, no typing needed.
+                Delete the entry afterwards if you like.
+              </p>
+              <div className="flex gap-2 mb-2">
+                <select value={activeMetric?.key} onChange={(e) => setTestMetric(e.target.value)}
+                  className="flex-1 min-w-0 min-h-11 px-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white">
+                  {metrics.map((m) => <option key={m.key} value={m.key}>{m.label}</option>)}
+                </select>
+                {activeMetric?.kind === 'number' && (
+                  <input inputMode="decimal" value={testValue} onChange={(e) => setTestValue(e.target.value)} aria-label="Test value"
+                    className="w-24 min-h-11 px-2 bg-surface-3 border border-white/10 rounded-lg text-xs text-white" />
+                )}
+              </div>
+              <button onClick={sendTest} disabled={busy || (activeMetric?.kind === 'number' && Number.isNaN(Number(testValue)))} className={btn + ' w-full'}>
+                Send test entry
+              </button>
+              {testResult && (
+                <p className={`mt-2 text-xs break-words ${testResult.ok ? 'text-green-400' : 'text-red-400'}`} data-testid="test-result">
+                  {testResult.ok ? '✓ Worked' : '✗ Failed'} · HTTP {testResult.status || 'no response'}
+                  <code className="block mt-1 text-[10px] text-gray-400 whitespace-pre-wrap">{testResult.text}</code>
+                </p>
+              )}
             </div>
           )}
 
