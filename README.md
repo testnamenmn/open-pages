@@ -87,6 +87,7 @@ Publish a page, open **Metrics** (works well on a phone — add it to your home 
 ### GitHub integration
 In **Metrics → GitHub**, enter a username (or profile link). No login, no tokens: the browser reads GitHub's free public API and stores the results as metrics you can link widgets to: **pushes per day**, **active days** (for a coding streak), **followers**, **stars** and **public repos**.
 
+- After connecting, click **Add GitHub widgets to my page** (on the GitHub card, or in the builder's sidebar) to get a ready-made set: coding streak, pushes per day, followers, stars and public repos. It never adds duplicates; review the layout in the builder, then publish.
 - Public data only, about the last 90 days (GitHub's events limit), so it will not match your profile's contribution graph exactly. Pushes are counted from public push events; commit counts are not used because GitHub is trimming push-event payloads.
 - Data refreshes when you open Metrics if it is more than 6 hours old, or with **Sync now**. GitHub allows 60 free requests/hour per IP; a sync uses 3-7.
 - Pages show a “Public GitHub data · @username” label. It is **not verified** (without OAuth we cannot prove you own the username).

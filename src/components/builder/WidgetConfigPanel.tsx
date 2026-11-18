@@ -49,8 +49,12 @@ export default function WidgetConfigPanel({ widget, onUpdate, onRemove, metricOp
       {widget.connector && widget.connector !== 'manual' && (
         <div className="px-3 py-2 bg-white/5 border border-white/10 rounded-lg">
           <span className="text-xs text-gray-400">
-            Template idea: {widget.connector.charAt(0).toUpperCase() + widget.connector.slice(1)} data. Integrations are
-            coming soon, so for now link a metric you log yourself.
+            {widget.connector === 'github' ? (
+              <>Tip: connect GitHub under <Link to="/metrics" className="text-brand-300 underline">Metrics</Link>, then link a “GitHub …” metric below.</>
+            ) : (
+              <>Template idea: {widget.connector.charAt(0).toUpperCase() + widget.connector.slice(1)} data. That integration is
+              coming soon, so for now link a metric you log yourself.</>
+            )}
           </span>
         </div>
       )}

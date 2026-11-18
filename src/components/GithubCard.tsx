@@ -19,11 +19,13 @@ interface Props {
   series: SeriesMap;
   loading: boolean;
   reload: () => Promise<void>;
+  /** Adds the starter GitHub widgets to the page. Returns a message to show, or null. */
+  onAddWidgets?: () => string | null;
 }
 
 const btn = 'min-h-11 px-4 rounded-lg text-sm border border-white/10 bg-surface-3 text-gray-200 hover:bg-surface-4 disabled:opacity-40';
 
-export default function GithubCard({ pageId, series, loading, reload }: Props) {
+export default function GithubCard({ pageId, series, loading, reload, onAddWidgets }: Props) {
   const username = githubUsername(series);
   const [input, setInput] = useState('');
   const [busy, setBusy] = useState(false);
@@ -112,6 +114,15 @@ export default function GithubCard({ pageId, series, loading, reload }: Props) {
             </button>
             <button onClick={disconnect} disabled={busy} className={btn + ' text-red-300'}>Disconnect</button>
           </div>
+          {onAddWidgets && (
+            <button
+              onClick={() => { const m = onAddWidgets(); if (m) setMsg({ kind: 'info', text: m }); }}
+              disabled={busy}
+              className="mt-3 w-full min-h-11 px-4 rounded-lg text-sm font-medium text-white bg-gradient-to-r from-brand-500 to-accent-purple hover:opacity-90 disabled:opacity-40"
+            >
+              Add GitHub widgets to my page
+            </button>
+          )}
         </>
       )}
 
