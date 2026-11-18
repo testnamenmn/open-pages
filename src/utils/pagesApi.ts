@@ -14,6 +14,7 @@ export class SlugTakenError extends Error {
 }
 
 interface PageRow {
+  id: string;
   client_id: string;
   slug: string;
   is_public: boolean;
@@ -26,6 +27,7 @@ function fromRow(row: PageRow): OpenPage {
   return {
     ...row.data,
     id: row.client_id,
+    dbId: row.id,
     slug: row.slug,
     isPublic: row.is_public,
     createdAt: row.created_at,

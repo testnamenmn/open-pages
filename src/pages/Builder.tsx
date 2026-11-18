@@ -24,7 +24,7 @@ import {
 type Tab = 'widgets' | 'theme' | 'settings';
 
 export default function Builder() {
-  const { state, dispatch } = useBuilder();
+  const { state, dispatch, metrics } = useBuilder();
   const { page, selectedWidgetId } = state;
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('widgets');
@@ -190,7 +190,7 @@ export default function Builder() {
                       : 'hover:ring-1 hover:ring-white/20'
                   }`}
                 >
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} series={metrics.series} />
                   {/* Overlay controls */}
                   <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                     <button
@@ -239,6 +239,8 @@ export default function Builder() {
           {activeTab === 'widgets' && selectedWidget && (
             <WidgetConfigPanel
               widget={selectedWidget}
+              metricOptions={Object.values(metrics.series)}
+              hasPublishedCopy={Boolean(metrics.dbId)}
               onUpdate={(config: Record<string, unknown>) =>
                 dispatch({ type: 'UPDATE_WIDGET_CONFIG', payload: { id: selectedWidget.id, config } })
               }
@@ -428,7 +430,7 @@ function PageSettingsPanel() {
 }
 
 function PreviewPage() {
-  const { state } = useBuilder();
+  const { state, metrics } = useBuilder();
   const { page } = state;
 
   return (
@@ -445,7 +447,7 @@ function PreviewPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {page.widgets.map((widget) => (
-          <WidgetRenderer key={widget.id} widget={widget} />
+          <WidgetRenderer key={widget.id} widget={widget} series={metrics.series} />
         ))}
       </div>
     </div>

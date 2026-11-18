@@ -9,6 +9,7 @@ import Connectors from './pages/Connectors';
 import Share from './pages/Share';
 import PublicPage from './pages/PublicPage';
 import MyPages from './pages/MyPages';
+import Metrics from './pages/Metrics';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
             <Route path="/connectors" element={<Connectors />} />
             <Route path="/share" element={<Share />} />
             <Route path="/my-pages" element={<MyPages />} />
+            <Route path="/metrics" element={<Metrics />} />
             <Route path="/p/:slug" element={<PublicPage />} />
           </Routes>
         </div>

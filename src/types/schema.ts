@@ -174,6 +174,8 @@ export interface WidgetInstance {
 
 export interface OpenPage {
   id: string;
+  /** Database row id (uuid). Only set for pages that have been published. */
+  dbId?: string;
   slug: string; // vanity URL
   ownerName: string;
   ownerAvatar: string;
