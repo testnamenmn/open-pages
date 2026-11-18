@@ -55,7 +55,8 @@ export default async function handler(req: Req, res: Res): Promise<void> {
 
   // --- API key -------------------------------------------------------------
   const auth = header(req, 'authorization') ?? '';
-  const key = (auth.startsWith('Bearer ') ? auth.slice(7) : header(req, 'x-api-key') ?? '').trim();
+  const bearer = /^bearer\s+(.+)$/i.exec(auth.trim());
+  const key = (bearer ? bearer[1] : header(req, 'x-api-key') ?? '').trim();
   if (!key) {
     res.status(401).json({ error: 'invalid_key', message: 'Send your key as "Authorization: Bearer <key>".' });
     return;
