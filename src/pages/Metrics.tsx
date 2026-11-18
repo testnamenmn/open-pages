@@ -7,6 +7,7 @@ import { pagesApi } from '../utils/pagesApi';
 import { metricsApi } from '../utils/metricsApi';
 import { useSeries } from '../hooks/useSeries';
 import ApiAccess from '../components/ApiAccess';
+import GithubCard from '../components/GithubCard';
 import { dayKey, formatValue, timeAgo, currentStreak } from '../utils/metricMath';
 import { slugifyKey, MetricKind, MetricSeries } from '../types/metrics';
 import type { OpenPage } from '../types/schema';
@@ -135,6 +136,8 @@ function PageMetrics({ page }: { page: OpenPage }) {
 
   return (
     <div className="space-y-4">
+      <GithubCard pageId={page.dbId!} series={series} loading={loading} reload={reload} />
+
       {loading && <p className="text-sm text-gray-500">Loading…</p>}
       {list.map((m) => (
         <MetricCard key={m.id} metric={m} onChange={reload} />
@@ -179,8 +182,9 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
   const [date, setDate] = useState(today);
   const [err, setErr] = useState('');
   const [busy, setBusy] = useState(false);
-  const recent = [...metric.points].reverse().slice(0, 5);
+  const recent = [...metric.points].reverse().slice(0, metric.source === 'github' ? 3 : 5);
   const checkedToday = metric.kind === 'checkin' && metric.points.some((p) => dayKey(p.ts) === today);
+  const fromGithub = metric.source === 'github';
 
   // Today → "now"; another day → noon local time on that day.
   const tsFor = (d: string) => (d === today ? undefined : new Date(`${d}T12:00:00`));
@@ -205,8 +209,8 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
         <div>
           <p className="text-sm font-semibold text-white">{metric.label}</p>
           <p className="text-[11px] text-gray-500">
-            {metric.kind === 'checkin' ? `Check-in · streak ${currentStreak(metric)} days` : `Number${metric.unit ? ' · ' + metric.unit : ''}`}
-            {' · '}{metric.points.length} entries
+            {fromGithub ? 'GitHub · ' : ''}{metric.kind === 'checkin' ? `Check-in · streak ${currentStreak(metric)} days` : `Number${metric.unit ? ' · ' + metric.unit : ''}`}
+            {' · '}{metric.points.length} {metric.points.length === 1 ? 'entry' : 'entries'}
           </p>
         </div>
         <button
@@ -223,7 +227,10 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
         </button>
       </div>
 
-      <div className="flex gap-2 mb-2">
+      {fromGithub && (
+        <p className="text-[11px] text-gray-500 mb-2">Public GitHub data for @{metric.sourceRef}. Updated by syncing, not by hand.</p>
+      )}
+      {!fromGithub && <div className="flex gap-2 mb-2">
         {metric.kind === 'number' ? (
           <>
             <input
@@ -246,11 +253,11 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
             <Check size={16} /> {checkedToday && date === today ? 'Done today' : 'Mark done'}
           </button>
         )}
-      </div>
-      <label className="flex items-center gap-2 text-[11px] text-gray-500">
+      </div>}
+      {!fromGithub && <label className="flex items-center gap-2 text-[11px] text-gray-500">
         Date
         <input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value || today)} className="bg-surface-3 border border-white/10 rounded px-2 py-1 text-xs text-gray-300" />
-      </label>
+      </label>}
       {err && <p className="text-xs text-red-400 mt-2">{err}</p>}
 
       {recent.length > 0 && (
@@ -262,9 +269,11 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
               </span>
               <span className="flex items-center gap-3 text-gray-600">
                 {timeAgo(p.ts)}
-                <button aria-label="Delete entry" className="hover:text-red-400" onClick={async () => { await metricsApi.deletePoint(p.id!); await onChange(); }}>
-                  <Trash2 size={12} />
-                </button>
+                {!fromGithub && (
+                  <button aria-label="Delete entry" className="hover:text-red-400" onClick={async () => { await metricsApi.deletePoint(p.id!); await onChange(); }}>
+                    <Trash2 size={12} />
+                  </button>
+                )}
               </span>
             </li>
           ))}

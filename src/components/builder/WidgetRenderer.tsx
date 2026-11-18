@@ -17,7 +17,22 @@ const EmptyNote = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[11px] text-gray-500 py-4 text-center">{children}</p>
 );
 
-export default function WidgetRenderer({ widget, series }: Props) {
+/** Wraps a widget and marks it when it shows GitHub-synced (public, unverified) data. */
+export default function WidgetRenderer(props: Props) {
+  const key = props.widget.config.metricKey;
+  const linked = typeof key === 'string' && key ? props.series?.[key] : undefined;
+  if (linked?.source !== 'github') return <WidgetBody {...props} />;
+  return (
+    <div className="relative">
+      <WidgetBody {...props} />
+      <span className="absolute bottom-1.5 right-3 text-[9px] text-gray-600" title="Public data pulled from GitHub, not verified">
+        Public GitHub data · @{linked.sourceRef}
+      </span>
+    </div>
+  );
+}
+
+function WidgetBody({ widget, series }: Props) {
   const schema = widgetSchemas[widget.type];
   const { config } = widget;
   const color = (config.color as string) || '#5c7cfa';
@@ -155,7 +170,7 @@ export default function WidgetRenderer({ widget, series }: Props) {
               <ResponsiveContainer width="100%" height="100%">
                 <Chart data={rows} margin={{ top: 4, right: 4, bottom: 0, left: 0 }}>
                   <XAxis dataKey="label" tick={{ fontSize: 9, fill: '#6b7280' }} axisLine={false} tickLine={false} interval="preserveStartEnd" />
-                  <YAxis tick={{ fontSize: 9, fill: '#6b7280' }} axisLine={false} tickLine={false} width={44} domain={['auto', 'auto']} />
+                  <YAxis tick={{ fontSize: 9, fill: '#6b7280' }} axisLine={false} tickLine={false} width={44} domain={['auto', 'auto']} allowDecimals={linked?.unit !== 'pushes'} />
                   <Tooltip
                     contentStyle={{ background: '#1a1b26', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 11 }}
                     formatter={(v: number) => [`${formatValue(v)}${linked?.unit ? ' ' + linked.unit : ''}`, linked?.label ?? '']}
