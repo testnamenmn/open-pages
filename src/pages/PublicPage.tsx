@@ -4,6 +4,7 @@ import { pagesApi } from '../utils/pagesApi';
 import { pageUrl as buildPageUrl } from '../utils/url';
 import type { OpenPage } from '../types/schema';
 import WidgetRenderer from '../components/builder/WidgetRenderer';
+import { useSeries } from '../hooks/useSeries';
 import {
   ArrowLeft,
   Share2,
@@ -22,6 +23,7 @@ export default function PublicPage() {
 
   const [page, setPage] = useState<OpenPage | null>(null);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+  const { series } = useSeries(page?.dbId);
 
   useEffect(() => {
     if (!slug) return;
@@ -157,7 +159,7 @@ export default function PublicPage() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.05 }}
                 >
-                  <WidgetRenderer widget={widget} />
+                  <WidgetRenderer widget={widget} series={series} />
                 </motion.div>
               ))}
             </div>

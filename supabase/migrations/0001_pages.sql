@@ -52,3 +52,9 @@ end $$;
 drop trigger if exists pages_touch on public.pages;
 create trigger pages_touch before update on public.pages
   for each row execute function public.touch_updated_at();
+
+-- Table privileges for the Data API roles (required on newer Supabase projects;
+-- row level security above still decides which rows each role can touch).
+grant usage on schema public to anon, authenticated;
+grant select on public.pages to anon;
+grant select, insert, update, delete on public.pages to authenticated;

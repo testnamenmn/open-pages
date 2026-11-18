@@ -76,10 +76,13 @@ npm run preview  # Preview production build
 Published pages are stored in Supabase so links work for everyone, not just the publisher's browser. Without these env vars the app falls back to localStorage (local-only demo mode).
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In **SQL Editor**, run `supabase/migrations/0001_pages.sql`.
+2. In **SQL Editor**, run `supabase/migrations/0001_pages.sql`, then `supabase/migrations/0002_metrics.sql` (each in a new query).
 3. In **Authentication → URL Configuration**, set *Site URL* to your deployed URL and add `http://localhost:5173/**` and your Vercel URL to *Redirect URLs* (needed for the magic-link email).
 4. Copy `.env.example` to `.env.local` and fill in the project URL + anon key (**Project Settings → API**).
 5. On Vercel: add the same two variables under *Project → Settings → Environment Variables* and redeploy.
+
+### Tracking metrics
+Publish a page, open **Metrics** (works well on a phone — add it to your home screen), create a metric, log values, then link widgets to it in the builder (select a widget → *Linked metric*). Public pages show the live latest value, charts (30d / 90d / all), streaks and habit grids.
 
 The anon key is safe to expose; access is enforced by row-level security (public pages are readable by anyone, only owners can write).
 

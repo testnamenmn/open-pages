@@ -1,6 +1,11 @@
 import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
 import { OpenPage, WidgetInstance, PageTheme, WidgetType, widgetSchemas } from '../types/schema';
 import { storage } from '../utils/storage';
+import { pagesApi } from '../utils/pagesApi';
+import { useAuth } from './AuthContext';
+import { useSeries } from '../hooks/useSeries';
+import { useState } from 'react';
+import type { SeriesMap } from '../types/metrics';
 
 interface BuilderState {
   page: OpenPage;
@@ -123,9 +128,17 @@ function reducer(state: BuilderState, action: Action): BuilderState {
   }
 }
 
+interface MetricsInfo {
+  /** Database id of the signed-in owner's published copy of this page (undefined if unpublished). */
+  dbId?: string;
+  series: SeriesMap;
+  reload: () => Promise<void>;
+}
+
 const BuilderContext = createContext<{
   state: BuilderState;
   dispatch: React.Dispatch<Action>;
+  metrics: MetricsInfo;
 } | null>(null);
 
 export function BuilderProvider({ children }: { children: ReactNode }) {
@@ -148,7 +161,32 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
     storage.saveCurrentPage(state.page);
   }, [state.page]);
 
-  return <BuilderContext.Provider value={{ state, dispatch }}>{children}</BuilderContext.Provider>;
+  // Find the owner's published copy of the page being edited (owner-only list, so never someone else's page).
+  const { user } = useAuth();
+  const [dbId, setDbId] = useState<string | undefined>();
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setDbId(undefined);
+      return;
+    }
+    pagesApi
+      .listMyPages()
+      .then((pages) => {
+        if (!cancelled) setDbId(pages.find((p) => p.id === state.page.id)?.dbId);
+      })
+      .catch(() => !cancelled && setDbId(undefined));
+    return () => {
+      cancelled = true;
+    };
+  }, [user, state.page.id]);
+  const { series, reload } = useSeries(dbId);
+
+  return (
+    <BuilderContext.Provider value={{ state, dispatch, metrics: { dbId, series, reload } }}>
+      {children}
+    </BuilderContext.Provider>
+  );
 }
 
 export function useBuilder() {

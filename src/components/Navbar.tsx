@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Layout, Sparkles, Key, Share2, Layers } from 'lucide-react';
+import { Menu, X, Layout, Sparkles, Key, Share2, Layers, Activity } from 'lucide-react';
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +12,7 @@ export default function Navbar() {
     { to: '/templates', label: 'Templates', icon: Layers },
     { to: '/builder', label: 'Builder', icon: Layout },
     { to: '/my-pages', label: 'My Pages', icon: Share2 },
+    { to: '/metrics', label: 'Metrics', icon: Activity },
     { to: '/connectors', label: 'Connectors', icon: Key },
   ];
 
