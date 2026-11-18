@@ -6,6 +6,7 @@ import { isSupabaseConfigured } from '../lib/supabase';
 import { pagesApi } from '../utils/pagesApi';
 import { metricsApi } from '../utils/metricsApi';
 import { useSeries } from '../hooks/useSeries';
+import ApiAccess from '../components/ApiAccess';
 import { dayKey, formatValue, timeAgo, currentStreak } from '../utils/metricMath';
 import { slugifyKey, MetricKind, MetricSeries } from '../types/metrics';
 import type { OpenPage } from '../types/schema';
@@ -141,6 +142,8 @@ function PageMetrics({ page }: { page: OpenPage }) {
       {!loading && list.length === 0 && (
         <p className="text-sm text-gray-500">No metrics yet. Create your first one below.</p>
       )}
+
+      <ApiAccess pageId={page.dbId!} exampleMetric={list[0]?.key} />
 
       <div className="glass-card rounded-xl p-4 border border-white/5">
         <p className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">New metric</p>

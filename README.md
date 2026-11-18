@@ -76,13 +76,29 @@ npm run preview  # Preview production build
 Published pages are stored in Supabase so links work for everyone, not just the publisher's browser. Without these env vars the app falls back to localStorage (local-only demo mode).
 
 1. Create a project at [supabase.com](https://supabase.com).
-2. In **SQL Editor**, run `supabase/migrations/0001_pages.sql`, then `supabase/migrations/0002_metrics.sql` (each in a new query).
+2. In **SQL Editor**, run `supabase/migrations/0001_pages.sql`, then `supabase/migrations/0002_metrics.sql`, then `supabase/migrations/0003_api_keys.sql` (each in its own new query, in that order).
 3. In **Authentication → URL Configuration**, set *Site URL* to your deployed URL and add `http://localhost:5173/**` and your Vercel URL to *Redirect URLs* (needed for the magic-link email).
 4. Copy `.env.example` to `.env.local` and fill in the project URL + anon key (**Project Settings → API**).
 5. On Vercel: add the same two variables under *Project → Settings → Environment Variables* and redeploy.
 
 ### Tracking metrics
 Publish a page, open **Metrics** (works well on a phone — add it to your home screen), create a metric, log values, then link widgets to it in the builder (select a widget → *Linked metric*). Public pages show the live latest value, charts (30d / 90d / all), streaks and habit grids.
+
+### Logging values via API
+In **Metrics → API access**, generate a key (shown once; only its hash is stored). Then:
+
+```bash
+curl -X POST https://YOUR-SITE/api/metric \
+  -H "Authorization: Bearer op_..." \
+  -H "Content-Type: application/json" \
+  -d '{"metric":"weight","value":72.4}'
+```
+
+- `metric` is the metric's key (name lowercased, spaces → hyphens: "Read 30m" → `read-30m`). Create the metric in the app first.
+- `value` is optional for check-in metrics. Optional `ts` (ISO date) backdates an entry.
+- Responses: `201` ok, `400` bad input, `401` bad key, `404` unknown metric, `429` over 60 requests/minute/key, `409` metric full (5000 entries).
+- Works from iOS Shortcuts ("Get Contents of URL", method POST, JSON body) and any automation tool.
+- The endpoint (`api/metric.ts`) needs no extra secrets: it reuses the same two Supabase variables.
 
 The anon key is safe to expose; access is enforced by row-level security (public pages are readable by anyone, only owners can write).
 
