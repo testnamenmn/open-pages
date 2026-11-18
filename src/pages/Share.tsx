@@ -22,7 +22,7 @@ export default function Share() {
   const [copied, setCopied] = useState<string | null>(null);
   const [embedCode, setEmbedCode] = useState(false);
 
-  const pageUrl = `https://openpages.io/${page.slug}`;
+  const pageUrl = `${window.location.origin}/p/${page.slug}`;
   const shareText = `Check out my Open Page — ${page.seoTitle}`;
 
   const handleCopy = (text: string, id: string) => {
@@ -69,7 +69,7 @@ export default function Share() {
 
           <div className="flex items-center gap-2 p-3 bg-surface-3 rounded-xl border border-white/10">
             <Link2 size={14} className="text-gray-500 shrink-0" />
-            <span className="text-sm text-gray-400 shrink-0">openpages.io/</span>
+            <span className="text-sm text-gray-400 shrink-0">{window.location.host}/p/</span>
             <span className="text-sm text-white font-medium truncate">{page.slug}</span>
             <button
               onClick={() => handleCopy(pageUrl, 'url')}
@@ -182,7 +182,7 @@ export default function Share() {
 
           {/* Google-style preview */}
           <div className="p-4 bg-surface-3 rounded-xl border border-white/5 mb-4">
-            <p className="text-xs text-gray-500 mb-1">openpages.io › {page.slug}</p>
+            <p className="text-xs text-gray-500 mb-1">{window.location.host} › {page.slug}</p>
             <p className="text-base text-[#8ab4f8] hover:underline cursor-pointer mb-1">
               {page.seoTitle}
             </p>

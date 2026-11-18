@@ -20,7 +20,7 @@ type Action =
   | { type: 'SET_DRAGGING'; payload: boolean };
 
 const defaultPage: OpenPage = {
-  id: 'page_1',
+  id: `page_${Date.now()}`,
   slug: 'my-page',
   ownerName: 'Your Name',
   ownerAvatar: '👤',

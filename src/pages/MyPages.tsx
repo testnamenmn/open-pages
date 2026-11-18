@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { storage } from '../utils/storage';
+import { pagesApi } from '../utils/pagesApi';
+import { pageUrl } from '../utils/url';
+import { useAuth } from '../store/AuthContext';
 import { OpenPage } from '../types/schema';
 import {
   Plus,
@@ -21,16 +23,17 @@ export default function MyPages() {
   const [pages, setPages] = useState<OpenPage[]>([]);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   useEffect(() => {
-    const loadedPages = storage.getAllPages();
-    setPages(loadedPages);
-  }, []);
+    pagesApi.listMyPages().then(setPages).catch(() => setPages([]));
+  }, [user]);
 
   const handleDelete = (id: string) => {
     if (confirm('Are you sure you want to delete this page? This cannot be undone.')) {
-      storage.deletePage(id);
-      setPages(pages.filter((p) => p.id !== id));
+      const target = pages.find((p) => p.id === id);
+      if (!target) return;
+      pagesApi.deletePage(target).then(() => setPages((prev) => prev.filter((p) => p.id !== id)));
     }
   };
 
@@ -41,7 +44,7 @@ export default function MyPages() {
   };
 
   const handleCopyLink = (slug: string, id: string) => {
-    const url = `https://openpages.io/${slug}`;
+    const url = pageUrl(slug);
     navigator.clipboard.writeText(url);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -139,7 +142,7 @@ export default function MyPages() {
                       )}
                     </div>
                     <p className="text-xs text-gray-500 mb-1">
-                      openpages.io/<span className="text-brand-300">{page.slug}</span>
+                      {window.location.host}/p/<span className="text-brand-300">{page.slug}</span>
                     </p>
                     <p className="text-sm text-gray-400 truncate mb-2">{page.bio}</p>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
