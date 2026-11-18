@@ -1,4 +1,4 @@
-import { createContext, useContext, useReducer, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useReducer, ReactNode, useEffect, useCallback } from 'react';
 import { OpenPage, WidgetInstance, PageTheme, WidgetType, widgetSchemas } from '../types/schema';
 import { storage } from '../utils/storage';
 import { pagesApi } from '../utils/pagesApi';
@@ -16,6 +16,7 @@ interface BuilderState {
 type Action =
   | { type: 'ADD_WIDGET'; payload: { widgetType: WidgetType; connector?: string } }
   | { type: 'ADD_WIDGETS'; payload: WidgetInstance[] }
+  | { type: 'SET_WIDGETS'; payload: WidgetInstance[] }
   | { type: 'REMOVE_WIDGET'; payload: string }
   | { type: 'SELECT_WIDGET'; payload: string | null }
   | { type: 'UPDATE_WIDGET_CONFIG'; payload: { id: string; config: Record<string, unknown> } }
@@ -78,6 +79,8 @@ function reducer(state: BuilderState, action: Action): BuilderState {
         ...state,
         page: { ...state.page, widgets: [...state.page.widgets, ...action.payload], updatedAt: new Date().toISOString() },
       };
+    case 'SET_WIDGETS':
+      return { ...state, page: { ...state.page, widgets: action.payload, updatedAt: new Date().toISOString() } };
     case 'REMOVE_WIDGET':
       return {
         ...state,
@@ -140,6 +143,8 @@ interface MetricsInfo {
   dbId?: string;
   series: SeriesMap;
   reload: () => Promise<void>;
+  /** Re-finds the published copy of this page, then reloads its metrics. Call when the builder opens. */
+  refresh: () => Promise<void>;
 }
 
 const BuilderContext = createContext<{
@@ -171,26 +176,32 @@ export function BuilderProvider({ children }: { children: ReactNode }) {
   // Find the owner's published copy of the page being edited (owner-only list, so never someone else's page).
   const { user } = useAuth();
   const [dbId, setDbId] = useState<string | undefined>();
+  const pageId = state.page.id;
+  const fetchDbId = useCallback(async (): Promise<string | undefined> => {
+    if (!user) return undefined;
+    try {
+      return (await pagesApi.listMyPages()).find((p) => p.id === pageId)?.dbId;
+    } catch {
+      return undefined;
+    }
+  }, [user, pageId]);
   useEffect(() => {
     let cancelled = false;
-    if (!user) {
-      setDbId(undefined);
-      return;
-    }
-    pagesApi
-      .listMyPages()
-      .then((pages) => {
-        if (!cancelled) setDbId(pages.find((p) => p.id === state.page.id)?.dbId);
-      })
-      .catch(() => !cancelled && setDbId(undefined));
+    fetchDbId().then((id) => !cancelled && setDbId(id));
     return () => {
       cancelled = true;
     };
-  }, [user, state.page.id]);
+  }, [fetchDbId]);
   const { series, reload } = useSeries(dbId);
+  /** Re-resolves the page's database id (it appears after the first publish) and reloads its metrics. */
+  const refresh = useCallback(async () => {
+    const id = await fetchDbId();
+    if (id !== dbId) setDbId(id);
+    else await reload();
+  }, [fetchDbId, dbId, reload]);
 
   return (
-    <BuilderContext.Provider value={{ state, dispatch, metrics: { dbId, series, reload } }}>
+    <BuilderContext.Provider value={{ state, dispatch, metrics: { dbId, series, reload, refresh } }}>
       {children}
     </BuilderContext.Provider>
   );

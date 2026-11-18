@@ -3,6 +3,7 @@ import { Trash2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { MetricSeries } from '../../types/metrics';
 import type { WidgetType } from '../../types/schema';
+import { COSMETIC_KEYS } from '../../utils/sample';
 
 // Which metric kind each widget type can display.
 const METRIC_KINDS: Partial<Record<WidgetType, 'number' | 'checkin' | 'any'>> = {
@@ -31,7 +32,8 @@ export default function WidgetConfigPanel({ widget, onUpdate, onRemove, metricOp
     if (field.type === 'number') {
       parsed = Number(value);
     }
-    onUpdate({ [field.key]: parsed });
+    // Typing your own numbers means it is no longer template placeholder data.
+    onUpdate(COSMETIC_KEYS.has(field.key) ? { [field.key]: parsed } : { [field.key]: parsed, sample: false });
   };
 
   return (

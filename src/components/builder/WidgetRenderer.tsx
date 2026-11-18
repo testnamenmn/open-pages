@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { ResponsiveContainer, LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import type { SeriesMap } from '../../types/metrics';
 import { slugifyKey } from '../../types/metrics';
+import { isSampleWidget } from '../../utils/sample';
 import { latest, trend, currentStreak, lastDays, chartRows, formatValue, timeAgo, Range } from '../../utils/metricMath';
 
 interface Props {
@@ -17,17 +18,29 @@ const EmptyNote = ({ children }: { children: React.ReactNode }) => (
   <p className="text-[11px] text-gray-500 py-4 text-center">{children}</p>
 );
 
-/** Wraps a widget and marks it when it shows GitHub-synced (public, unverified) data. */
+/**
+ * Wraps a widget and labels where its numbers come from:
+ *  - "Sample data": template placeholder numbers that are not the user's real data
+ *  - "Public GitHub data · @user": synced from GitHub (public, not verified)
+ */
 export default function WidgetRenderer(props: Props) {
   const key = props.widget.config.metricKey;
   const linked = typeof key === 'string' && key ? props.series?.[key] : undefined;
-  if (linked?.source !== 'github') return <WidgetBody {...props} />;
+  const sample = isSampleWidget(props.widget);
+  const github = linked?.source === 'github';
+  if (!sample && !github) return <WidgetBody {...props} />;
   return (
-    <div className="relative">
+    <div className="relative [&>div]:pb-6">
       <WidgetBody {...props} />
-      <span className="absolute bottom-1.5 right-3 text-[9px] text-gray-600" title="Public data pulled from GitHub, not verified">
-        Public GitHub data · @{linked.sourceRef}
-      </span>
+      {sample ? (
+        <span className="absolute bottom-1.5 right-3 text-[9px] text-amber-400" title="Placeholder from a template, not real data" data-testid="sample-tag">
+          Sample data
+        </span>
+      ) : (
+        <span className="absolute bottom-1.5 right-3 text-[9px] text-gray-600" title="Public data pulled from GitHub, not verified">
+          Public GitHub data · @{linked!.sourceRef}
+        </span>
+      )}
     </div>
   );
 }
@@ -38,8 +51,14 @@ function WidgetBody({ widget, series }: Props) {
   const color = (config.color as string) || '#5c7cfa';
   const linked = typeof config.metricKey === 'string' && config.metricKey ? series?.[config.metricKey as string] : undefined;
   const [range, setRange] = useState<Range>('30d');
+  // A widget linked to a metric never falls back to the template's placeholder numbers.
+  const hasLink = typeof config.metricKey === 'string' && !!config.metricKey;
 
   const baseClasses = 'glass-card rounded-xl p-4 border border-white/5';
+
+  const streakValue: number | string = linked?.kind === 'checkin' ? currentStreak(linked) : hasLink ? '—' : (config.currentDays as number);
+  const streakUnitRaw = String(linked?.kind === 'checkin' ? 'days' : (config.unit ?? ''));
+  const streakUnit = streakValue === 1 ? streakUnitRaw.replace(/s$/, '') : streakUnitRaw; // "1 day", not "1 days"
 
   switch (widget.type) {
     case 'streak':
@@ -51,9 +70,9 @@ function WidgetBody({ widget, series }: Props) {
           </div>
           <div className="flex items-baseline gap-1">
             <span className="text-3xl font-bold" style={{ color }}>
-              {linked?.kind === 'checkin' ? currentStreak(linked) : (config.currentDays as number)}
+              {streakValue}
             </span>
-            <span className="text-xs text-gray-500">{linked?.kind === 'checkin' ? 'days' : (config.unit as string)}</span>
+            <span className="text-xs text-gray-500">{streakUnit}</span>
           </div>
           <div className="mt-2 h-1.5 bg-white/5 rounded-full overflow-hidden">
             <motion.div
@@ -78,6 +97,7 @@ function WidgetBody({ widget, series }: Props) {
             <span className="text-3xl font-bold" style={{ color }}>
               {linked && latest(linked)
                 ? formatValue(latest(linked)!.value)
+                : hasLink ? '—'
                 : typeof config.value === 'number' ? config.value.toLocaleString() : String(config.value)}
             </span>
             {(linked?.unit || config.unit) ? <span className="text-xs text-gray-500">{linked?.unit || String(config.unit)}</span> : null}
@@ -86,7 +106,7 @@ function WidgetBody({ widget, series }: Props) {
       );
 
     case 'progress':
-      const current = linked && latest(linked) ? latest(linked)!.value : (config.current as number) || 0;
+      const current = linked && latest(linked) ? latest(linked)!.value : hasLink ? 0 : (config.current as number) || 0;
       const target = (config.target as number) || 100;
       const pct = Math.min(100, Math.max(0, Math.round((current / target) * 100)));
       return (
@@ -114,7 +134,7 @@ function WidgetBody({ widget, series }: Props) {
 
     case 'stat_number':
       const liveTrend = linked?.kind === 'number' && latest(linked) ? trend(linked) : undefined;
-      const trendValue = liveTrend ?? config.trend;
+      const trendValue = liveTrend ?? (hasLink ? 'neutral' : config.trend);
       const TrendIcon = trendValue === 'up' ? TrendingUp : trendValue === 'down' ? TrendingDown : Minus;
       const trendColor = trendValue === 'up' ? '#51cf66' : trendValue === 'down' ? '#ff6b6b' : '#9ca3af';
       return (
@@ -124,7 +144,7 @@ function WidgetBody({ widget, series }: Props) {
             <TrendIcon size={12} style={{ color: trendColor }} />
           </div>
           <p className="text-2xl font-bold" style={{ color }}>
-            {linked && latest(linked) ? `${formatValue(latest(linked)!.value)}${linked.unit ? ' ' + linked.unit : ''}` : (config.value as string)}
+            {linked && latest(linked) ? `${formatValue(latest(linked)!.value)}${linked.unit ? ' ' + linked.unit : ''}` : hasLink ? '—' : (config.value as string)}
           </p>
           {config.subtitle ? <p className="text-xs text-gray-500 mt-1">{String(config.subtitle)}</p> : null}
         </div>
