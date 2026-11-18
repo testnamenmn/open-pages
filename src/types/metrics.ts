@@ -6,6 +6,9 @@ export interface MetricPoint {
   value: number;
 }
 
+export type MetricSource = 'manual' | 'github';
+export type GithubStat = 'pushes' | 'active_days' | 'followers' | 'stars' | 'repos';
+
 export interface Metric {
   id: string;
   pageId: string;
@@ -13,6 +16,12 @@ export interface Metric {
   label: string;
   kind: MetricKind;
   unit: string;
+  /** Where the data comes from. Absent/'manual' = typed in by the owner. */
+  source?: MetricSource;
+  /** For source 'github': the GitHub username. */
+  sourceRef?: string | null;
+  sourceStat?: GithubStat | null;
+  syncedAt?: string | null;
 }
 
 /** A metric together with its points, sorted oldest → newest. */

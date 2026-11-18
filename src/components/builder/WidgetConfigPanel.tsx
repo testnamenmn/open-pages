@@ -73,7 +73,7 @@ export default function WidgetConfigPanel({ widget, onUpdate, onRemove, metricOp
                   .filter((m) => METRIC_KINDS[widget.type] === 'any' || m.kind === METRIC_KINDS[widget.type])
                   .map((m) => (
                     <option key={m.key} value={m.key}>
-                      {m.label} ({m.kind === 'checkin' ? 'check-in' : 'number'})
+                      {m.label} ({m.source === 'github' ? 'GitHub' : m.kind === 'checkin' ? 'check-in' : 'number'})
                     </option>
                   ))}
               </select>
