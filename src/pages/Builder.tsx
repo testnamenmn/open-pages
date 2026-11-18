@@ -132,7 +132,7 @@ export default function Builder() {
           <div>
             <h1 className="text-lg font-bold text-white">Page Builder</h1>
             <p className="text-xs text-gray-500">
-              openpages.io/<span className="text-brand-300">{page.slug || 'your-slug'}</span>
+              {window.location.host}/p/<span className="text-brand-300">{page.slug || 'your-slug'}</span>
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -381,7 +381,7 @@ function PageSettingsPanel() {
       <div>
         <label className="text-xs font-medium text-gray-400 mb-1.5 block">Vanity URL</label>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-500">openpages.io/</span>
+          <span className="text-xs text-gray-500">{window.location.host}/p/</span>
           <input
             type="text"
             value={page.slug}

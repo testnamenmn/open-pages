@@ -1,7 +1,10 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useBuilder } from '../../store/BuilderContext';
-import { storage } from '../../utils/storage';
+import { pagesApi, SlugTakenError } from '../../utils/pagesApi';
+import { isSupabaseConfigured } from '../../lib/supabase';
+import { useAuth } from '../../store/AuthContext';
+import { pageUrl } from '../../utils/url';
 import { X, Globe, Link2, Check, AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -13,6 +16,10 @@ interface Props {
 export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
   const { state } = useBuilder();
   const { page } = state;
+  const { user, loading: authLoading, signInWithEmail } = useAuth();
+  const [email, setEmail] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [busy, setBusy] = useState(false);
   
   const [slug, setSlug] = useState(page.slug || '');
   const [isPublic, setIsPublic] = useState(true);
@@ -20,40 +27,47 @@ export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
   const [seoDescription, setSeoDescription] = useState(page.seoDescription || '');
   const [error, setError] = useState('');
 
-  const handlePublish = () => {
-    // Validate slug
+  const handleSignIn = async () => {
+    if (!email.includes('@')) {
+      setError('Enter a valid email address');
+      return;
+    }
+    setBusy(true);
+    const { error: err } = await signInWithEmail(email.trim());
+    setBusy(false);
+    if (err) setError(err);
+    else {
+      setError('');
+      setEmailSent(true);
+    }
+  };
+
+  const handlePublish = async () => {
     if (!slug.trim()) {
       setError('Please enter a URL slug');
       return;
     }
-
-    if (!/^[a-z0-9-]+$/.test(slug)) {
-      setError('Slug can only contain lowercase letters, numbers, and hyphens');
+    if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug) || slug.length < 2 || slug.length > 40) {
+      setError('Slug must be 2-40 characters: lowercase letters, numbers and single hyphens');
       return;
     }
 
-    // Check if slug is taken (by another page)
-    const existingPage = storage.getPageBySlug(slug);
-    if (existingPage && existingPage.id !== page.id) {
-      setError('This URL is already taken. Try a different slug.');
-      return;
+    setBusy(true);
+    try {
+      const saved = await pagesApi.savePage({
+        ...page,
+        slug,
+        isPublic,
+        seoTitle,
+        seoDescription,
+        updatedAt: new Date().toISOString(),
+      });
+      onPublished(saved.slug);
+    } catch (e) {
+      setError(e instanceof SlugTakenError ? e.message : (e as Error).message || 'Could not publish. Try again.');
+    } finally {
+      setBusy(false);
     }
-
-    // Update page with publish settings
-    const publishedPage = {
-      ...page,
-      slug,
-      isPublic,
-      seoTitle,
-      seoDescription,
-      updatedAt: new Date().toISOString(),
-    };
-
-    // Save to storage
-    storage.savePage(publishedPage);
-
-    // Notify parent
-    onPublished(slug);
   };
 
   const handleSlugChange = (value: string) => {
@@ -97,13 +111,49 @@ export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
               </button>
             </div>
 
+            {isSupabaseConfigured && !authLoading && !user ? (
+              <div>
+                <p className="text-sm text-gray-300 mb-3">
+                  Sign in to publish. We'll email you a magic link — no password needed.
+                </p>
+                {emailSent ? (
+                  <p className="text-sm text-green-400">
+                    Check your inbox for the sign-in link, then come back and press Publish.
+                  </p>
+                ) : (
+                  <>
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => { setEmail(e.target.value); setError(''); }}
+                      placeholder="you@example.com"
+                      className="w-full px-3 py-2 bg-surface-3 border border-white/10 rounded-lg text-sm text-white focus:outline-none focus:border-brand-500/50 mb-3"
+                    />
+                    {error && (
+                      <div className="flex items-center gap-1.5 mb-3 text-xs text-red-400">
+                        <AlertCircle size={12} />
+                        {error}
+                      </div>
+                    )}
+                    <button
+                      onClick={handleSignIn}
+                      disabled={busy}
+                      className="w-full px-4 py-2.5 bg-gradient-to-r from-brand-500 to-accent-purple rounded-lg text-sm text-white font-medium hover:opacity-90 disabled:opacity-50 transition-all"
+                    >
+                      {busy ? 'Sending…' : 'Send magic link'}
+                    </button>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
             {/* URL Slug */}
             <div className="mb-4">
               <label className="text-xs font-medium text-gray-400 mb-2 block">
                 Your Page URL
               </label>
               <div className="flex items-center gap-2 p-3 bg-surface-3 rounded-lg border border-white/10">
-                <span className="text-xs text-gray-500 shrink-0">openpages.io/</span>
+                <span className="text-xs text-gray-500 shrink-0">{pageUrl('')}</span>
                 <input
                   type="text"
                   value={slug}
@@ -177,12 +227,15 @@ export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
               </button>
               <button
                 onClick={handlePublish}
+                disabled={busy}
                 className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-brand-500 to-accent-purple rounded-lg text-sm text-white font-medium hover:opacity-90 transition-all"
               >
                 <Check size={14} />
-                Publish
+                {busy ? 'Publishing…' : 'Publish'}
               </button>
             </div>
+              </>
+            )}
           </motion.div>
         </motion.div>
       )}

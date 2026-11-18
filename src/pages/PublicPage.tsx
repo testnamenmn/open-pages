@@ -1,6 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { storage } from '../utils/storage';
+import { pagesApi } from '../utils/pagesApi';
+import { pageUrl as buildPageUrl } from '../utils/url';
+import type { OpenPage } from '../types/schema';
 import WidgetRenderer from '../components/builder/WidgetRenderer';
 import {
   ArrowLeft,
@@ -11,14 +13,34 @@ import {
   Copy,
   Check,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function PublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const [liked, setLiked] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  const page = slug ? storage.getPageBySlug(slug) : null;
+  const [page, setPage] = useState<OpenPage | null>(null);
+  const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
+
+  useEffect(() => {
+    if (!slug) return;
+    let cancelled = false;
+    setStatus('loading');
+    pagesApi
+      .getPageBySlug(slug)
+      .then((p) => { if (!cancelled) { setPage(p); setStatus('ready'); } })
+      .catch(() => { if (!cancelled) setStatus('error'); });
+    return () => { cancelled = true; };
+  }, [slug]);
+
+  if (status === 'loading') {
+    return <div className="min-h-screen pt-20 flex items-center justify-center text-gray-400">Loading…</div>;
+  }
+
+  if (status === 'error') {
+    return <div className="min-h-screen pt-20 flex items-center justify-center text-gray-400">Couldn't load this page. Please try again.</div>;
+  }
 
   if (!page) {
     return (
@@ -43,7 +65,7 @@ export default function PublicPage() {
     );
   }
 
-  const pageUrl = `https://openpages.io/${page.slug}`;
+  const pageUrl = buildPageUrl(page.slug);
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(pageUrl);

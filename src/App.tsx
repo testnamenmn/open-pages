@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { BuilderProvider } from './store/BuilderContext';
+import { AuthProvider } from './store/AuthContext';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
 import Builder from './pages/Builder';
@@ -11,6 +12,7 @@ import MyPages from './pages/MyPages';
 
 function App() {
   return (
+    <AuthProvider>
     <BuilderProvider>
       <Router>
         <div className="min-h-screen bg-surface text-gray-200">
@@ -27,6 +29,7 @@ function App() {
         </div>
       </Router>
     </BuilderProvider>
+    </AuthProvider>
   );
 }
 
