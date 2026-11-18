@@ -93,6 +93,14 @@ In **Metrics → GitHub**, enter a username (or profile link). No login, no toke
 - Data refreshes when you open Metrics if it is more than 6 hours old, or with **Sync now**. GitHub allows 60 free requests/hour per IP; a sync uses 3-7.
 - Pages show a “Public GitHub data · @username” label. It is **not verified** (without OAuth we cannot prove you own the username).
 
+### Badges and link previews
+Once a page is published and public:
+
+- **Badges for READMEs and bios**: in **Metrics**, tap **Badge** on any metric for a live badge and copy-paste Markdown/HTML, e.g. `https://YOUR-SITE/badge/your-slug/weight.svg`. Check-in metrics show a streak (`12 days`). The page badge is `/badge/your-slug.svg`. Optional query parameters: `label=`, `color=` (hex), `style=flat-square`. Badges are cached up to 5 minutes.
+- **Link previews**: when `/p/your-slug` is shared on X, LinkedIn, Slack, Discord and similar, crawlers receive a small HTML page with Open Graph / Twitter tags (your SEO title and description from Publish) and a 1200×630 card at `/og/your-slug.png` showing your name, bio and up to three real numbers. Sample/template placeholder numbers are never used. Only known crawler user agents get this page; people always get the app. Social sites cache previews, so edits can take a while to show; use their debugger tools (e.g. LinkedIn Post Inspector, Facebook Sharing Debugger) to refresh.
+- Private or unpublished pages show "not found" badges and have no preview. Everything uses the public anon key and row level security; no extra secrets.
+- These are Vercel functions (`api/share.ts`), so they do not exist under `npm run dev`.
+
 ### Logging values via API
 In **Metrics → API access**, generate a key (shown once; only its hash is stored). Then:
 

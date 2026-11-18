@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useBuilder } from '../store/BuilderContext';
+import BadgeSnippets, { ogUrl } from '../components/BadgeSnippets';
 import {
   Link2,
   Copy,
@@ -17,8 +18,10 @@ import {
 } from 'lucide-react';
 
 export default function Share() {
-  const { state } = useBuilder();
+  const { state, metrics } = useBuilder();
   const { page } = state;
+  const published = Boolean(metrics.dbId) && page.isPublic;
+  const [previewBroken, setPreviewBroken] = useState(false);
   const [copied, setCopied] = useState<string | null>(null);
   const [embedCode, setEmbedCode] = useState(false);
 
@@ -169,6 +172,35 @@ export default function Share() {
               </div>
             </button>
           </div>
+        </motion.div>
+
+        {/* Link preview + badge */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="glass-card rounded-2xl p-6 mb-6"
+          data-testid="link-preview-card"
+        >
+          <div className="flex items-center gap-2 mb-1">
+            <Eye size={16} className="text-brand-400" />
+            <h3 className="text-sm font-semibold text-white">Link preview</h3>
+          </div>
+          <p className="text-xs text-gray-500 mb-4">
+            This card appears when your link is shared on X, LinkedIn, Slack, Discord and similar. It shows your name, bio and up to three real
+            numbers (never sample data). Social sites cache previews, so changes can take a while to appear.
+          </p>
+          {!published && (
+            <p className="text-xs text-amber-400 mb-3">Publish your page (and keep it public) to enable the preview and badges.</p>
+          )}
+          {previewBroken ? (
+            <p className="text-xs text-gray-500" data-testid="preview-unavailable">Preview not available yet. It works on your published site once this version is deployed.</p>
+          ) : (
+            <img src={ogUrl(page.slug)} alt="Link preview" onError={() => setPreviewBroken(true)} className="w-full rounded-xl border border-white/10" data-testid="og-preview" />
+          )}
+          <h4 className="text-xs font-semibold text-white mt-6 mb-1">Page badge for READMEs and bios</h4>
+          <p className="text-xs text-gray-500">For a badge showing one of your numbers, open Metrics and use the Badge button on that metric.</p>
+          <BadgeSnippets slug={page.slug} alt="Open Pages" live={published} />
         </motion.div>
 
         {/* SEO Settings */}

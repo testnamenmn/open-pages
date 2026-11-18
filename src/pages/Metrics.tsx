@@ -10,6 +10,7 @@ import { metricsApi } from '../utils/metricsApi';
 import { useSeries } from '../hooks/useSeries';
 import ApiAccess from '../components/ApiAccess';
 import GithubCard from '../components/GithubCard';
+import BadgeSnippets from '../components/BadgeSnippets';
 import { dayKey, formatValue, timeAgo, currentStreak } from '../utils/metricMath';
 import { slugifyKey, MetricKind, MetricSeries } from '../types/metrics';
 import type { OpenPage } from '../types/schema';
@@ -165,7 +166,7 @@ function PageMetrics({ page }: { page: OpenPage }) {
 
       {loading && <p className="text-sm text-gray-500">Loading…</p>}
       {list.map((m) => (
-        <MetricCard key={m.id} metric={m} onChange={reload} />
+        <MetricCard key={m.id} metric={m} onChange={reload} slug={page.slug} live={page.isPublic} />
       ))}
       {!loading && list.length === 0 && (
         <p className="text-sm text-gray-500">No metrics yet. Create your first one below.</p>
@@ -201,7 +202,8 @@ function PageMetrics({ page }: { page: OpenPage }) {
   );
 }
 
-function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () => Promise<void> }) {
+function MetricCard({ metric, onChange, slug, live }: { metric: MetricSeries; onChange: () => Promise<void>; slug: string; live: boolean }) {
+  const [showBadge, setShowBadge] = useState(false);
   const today = dayKey(new Date());
   const [value, setValue] = useState('');
   const [date, setDate] = useState(today);
@@ -238,6 +240,9 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
             {' · '}{metric.points.length} {metric.points.length === 1 ? 'entry' : 'entries'}
           </p>
         </div>
+        <button onClick={() => setShowBadge((v) => !v)} className="ml-auto mr-1 px-2 py-1 text-[11px] text-brand-300 hover:underline" aria-expanded={showBadge}>
+          Badge
+        </button>
         <button
           aria-label={`Delete ${metric.label}`}
           onClick={async () => {
@@ -251,6 +256,8 @@ function MetricCard({ metric, onChange }: { metric: MetricSeries; onChange: () =
           <Trash2 size={16} />
         </button>
       </div>
+
+      {showBadge && <div className="mb-3"><BadgeSnippets slug={slug} metricKey={metric.key} alt={`${metric.label} on Open Pages`} live={live} /></div>}
 
       {fromGithub && (
         <p className="text-[11px] text-gray-500 mb-2">Public GitHub data for @{metric.sourceRef}. Updated by syncing, not by hand.</p>
