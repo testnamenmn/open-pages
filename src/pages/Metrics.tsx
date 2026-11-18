@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useBuilder } from '../store/BuilderContext';
-import { missingGithubWidgets } from '../utils/githubWidgets';
+import { applyGithubWidgets, describePlan } from '../utils/githubWidgets';
 import { Plus, Trash2, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -118,10 +118,10 @@ function PageMetrics({ page }: { page: OpenPage }) {
   const addGithubWidgets = (): string | null => {
     const inBuilder = builder.state.page.id === page.id; // the builder already holds this page (maybe with unpublished edits)
     const base = inBuilder ? builder.state.page.widgets : page.widgets;
-    const missing = missingGithubWidgets(base, series);
-    if (missing.length === 0) return 'Your page already has the GitHub widgets.';
+    const plan = applyGithubWidgets(base, series);
+    if (plan.linked + plan.added === 0) return 'Your page already shows your GitHub data.';
     if (inBuilder) {
-      builder.dispatch({ type: 'ADD_WIDGETS', payload: missing });
+      builder.dispatch({ type: 'SET_WIDGETS', payload: plan.widgets });
     } else {
       if (
         builder.state.page.widgets.length > 0 &&
@@ -129,9 +129,9 @@ function PageMetrics({ page }: { page: OpenPage }) {
       ) {
         return null;
       }
-      builder.dispatch({ type: 'LOAD_TEMPLATE', payload: { ...page, widgets: [...page.widgets, ...missing] } });
+      builder.dispatch({ type: 'LOAD_TEMPLATE', payload: { ...page, widgets: plan.widgets } });
     }
-    navigate('/builder', { state: { githubAdded: missing.length } });
+    navigate('/builder', { state: { githubPlan: describePlan(plan) } });
     return null;
   };
   const [label, setLabel] = useState('');

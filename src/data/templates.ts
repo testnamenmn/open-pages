@@ -1,4 +1,5 @@
 import { WidgetInstance, WidgetType } from '../types/schema';
+import { SAMPLE_TYPES } from '../utils/sample';
 
 export interface Template {
   id: string;
@@ -15,7 +16,8 @@ let widgetId = 0;
 const makeWidget = (type: WidgetType, config: Record<string, unknown>, x: number, y: number, connector?: string): WidgetInstance => ({
   id: `tpl_${++widgetId}`,
   type,
-  config,
+  // Placeholder numbers are flagged so the UI can label them as sample data until replaced or linked.
+  config: SAMPLE_TYPES.has(type) ? { ...config, sample: true } : config,
   connector: connector as WidgetInstance['connector'],
   position: { x, y },
   size: { w: 1, h: 1 },

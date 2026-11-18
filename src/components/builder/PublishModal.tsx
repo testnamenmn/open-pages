@@ -14,7 +14,7 @@ interface Props {
 }
 
 export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
-  const { state } = useBuilder();
+  const { state, dispatch } = useBuilder();
   const { page } = state;
   const { user, loading: authLoading, signInWithEmail } = useAuth();
   const [email, setEmail] = useState('');
@@ -61,6 +61,11 @@ export default function PublishModal({ isOpen, onClose, onPublished }: Props) {
         seoTitle,
         seoDescription,
         updatedAt: new Date().toISOString(),
+      });
+      // Remember what was published, so the next Publish defaults to the same URL instead of the placeholder slug.
+      dispatch({
+        type: 'UPDATE_PAGE_INFO',
+        payload: { slug: saved.slug, isPublic: saved.isPublic, seoTitle: saved.seoTitle, seoDescription: saved.seoDescription },
       });
       onPublished(saved.slug);
     } catch (e) {
