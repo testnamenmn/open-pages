@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { missingGithubWidgets } from '../utils/githubWidgets';
 import { useBuilder } from '../store/BuilderContext';
 import { widgetSchemas, WidgetType } from '../types/schema';
 import WidgetRenderer from '../components/builder/WidgetRenderer';
@@ -27,6 +28,29 @@ export default function Builder() {
   const { state, dispatch, metrics } = useBuilder();
   const { page, selectedWidgetId } = state;
   const navigate = useNavigate();
+  const location = useLocation();
+  // The builder context loads metrics once at startup; metrics created or synced on the Metrics
+  // screen since then must show up here (linked-metric dropdown, GitHub widgets, live previews).
+  const reloadMetrics = metrics.reload;
+  useEffect(() => {
+    reloadMetrics();
+  }, [reloadMetrics]);
+  const [bannerCount, setBannerCount] = useState<number | null>(
+    typeof (location.state as { githubAdded?: number } | null)?.githubAdded === 'number'
+      ? (location.state as { githubAdded: number }).githubAdded
+      : null
+  );
+  const [githubNote, setGithubNote] = useState('');
+  const hasGithub = Object.values(metrics.series).some((m) => m.source === 'github');
+  const githubMissing = missingGithubWidgets(page.widgets, metrics.series);
+  const addGithubWidgets = () => {
+    dispatch({ type: 'ADD_WIDGETS', payload: githubMissing });
+    setGithubNote(`Added ${githubMissing.length} widget${githubMissing.length === 1 ? '' : 's'}. Publish to show them on your public page.`);
+  };
+  const dismissBanner = () => {
+    setBannerCount(null);
+    navigate('/builder', { replace: true, state: null });
+  };
   const [activeTab, setActiveTab] = useState<Tab>('widgets');
   const [showPreview, setShowPreview] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
@@ -99,6 +123,23 @@ export default function Builder() {
             <span className="text-xs text-gray-500">{page.widgets.length} active</span>
           </div>
 
+          {hasGithub && (
+            <div className="mb-4 p-3 rounded-lg bg-brand-600/10 border border-brand-500/20" data-testid="github-widgets-cta">
+              <p className="text-xs font-medium text-white mb-1">GitHub is connected</p>
+              <p className="text-[10px] text-gray-400 mb-2">
+                Add a ready-made set: coding streak, pushes per day, followers, stars and repos.
+              </p>
+              <button
+                onClick={addGithubWidgets}
+                disabled={githubMissing.length === 0}
+                className="w-full px-3 py-2 rounded-lg text-xs font-medium text-white bg-gradient-to-r from-brand-500 to-accent-purple hover:opacity-90 disabled:opacity-50 disabled:cursor-default"
+              >
+                {githubMissing.length > 0 ? `Add GitHub widgets (${githubMissing.length})` : 'GitHub widgets are on your page ✓'}
+              </button>
+              {githubNote && <p className="text-[10px] text-green-400 mt-2" data-testid="github-note">{githubNote}</p>}
+            </div>
+          )}
+
           <p className="text-xs text-gray-500 mb-3">
             Drag widgets onto the canvas or click to add
           </p>
@@ -127,6 +168,17 @@ export default function Builder() {
 
       {/* Center — Canvas */}
       <main className="flex-1 p-4 lg:p-6 overflow-y-auto">
+        {bannerCount !== null && (
+          <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/30 flex items-center justify-between gap-3" data-testid="github-banner">
+            <p className="text-xs text-green-300">
+              Added {bannerCount} GitHub widget{bannerCount === 1 ? '' : 's'} to this page. Check the layout, then publish to make them live.
+            </p>
+            <div className="flex gap-2 shrink-0">
+              <button onClick={() => setShowPublishModal(true)} className="px-3 py-1.5 rounded-lg text-xs text-white bg-green-600/80 hover:bg-green-600">Publish now</button>
+              <button onClick={dismissBanner} aria-label="Dismiss" className="px-2 text-gray-400 hover:text-white"><X size={14} /></button>
+            </div>
+          </div>
+        )}
         {/* Top bar */}
         <div className="flex items-center justify-between mb-4">
           <div>

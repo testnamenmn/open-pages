@@ -15,6 +15,7 @@ interface BuilderState {
 
 type Action =
   | { type: 'ADD_WIDGET'; payload: { widgetType: WidgetType; connector?: string } }
+  | { type: 'ADD_WIDGETS'; payload: WidgetInstance[] }
   | { type: 'REMOVE_WIDGET'; payload: string }
   | { type: 'SELECT_WIDGET'; payload: string | null }
   | { type: 'UPDATE_WIDGET_CONFIG'; payload: { id: string; config: Record<string, unknown> } }
@@ -71,6 +72,12 @@ function reducer(state: BuilderState, action: Action): BuilderState {
         selectedWidgetId: newWidget.id,
       };
     }
+    case 'ADD_WIDGETS':
+      if (action.payload.length === 0) return state;
+      return {
+        ...state,
+        page: { ...state.page, widgets: [...state.page.widgets, ...action.payload], updatedAt: new Date().toISOString() },
+      };
     case 'REMOVE_WIDGET':
       return {
         ...state,

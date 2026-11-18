@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { useBuilder } from '../store/BuilderContext';
+import { missingGithubWidgets } from '../utils/githubWidgets';
 import { Plus, Trash2, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../store/AuthContext';
 import { isSupabaseConfigured } from '../lib/supabase';
@@ -109,6 +111,29 @@ function SignIn({ onSignIn }: { onSignIn: (email: string) => Promise<{ error?: s
 
 function PageMetrics({ page }: { page: OpenPage }) {
   const { series, loading, reload } = useSeries(page.dbId);
+  const builder = useBuilder();
+  const navigate = useNavigate();
+
+  /** Adds the starter GitHub widgets to this page in the builder. Returns a message if nothing was added. */
+  const addGithubWidgets = (): string | null => {
+    const inBuilder = builder.state.page.id === page.id; // the builder already holds this page (maybe with unpublished edits)
+    const base = inBuilder ? builder.state.page.widgets : page.widgets;
+    const missing = missingGithubWidgets(base, series);
+    if (missing.length === 0) return 'Your page already has the GitHub widgets.';
+    if (inBuilder) {
+      builder.dispatch({ type: 'ADD_WIDGETS', payload: missing });
+    } else {
+      if (
+        builder.state.page.widgets.length > 0 &&
+        !confirm('This opens your page in the builder and replaces the page currently there. Unpublished changes in the builder will be lost. Continue?')
+      ) {
+        return null;
+      }
+      builder.dispatch({ type: 'LOAD_TEMPLATE', payload: { ...page, widgets: [...page.widgets, ...missing] } });
+    }
+    navigate('/builder', { state: { githubAdded: missing.length } });
+    return null;
+  };
   const [label, setLabel] = useState('');
   const [kind, setKind] = useState<MetricKind>('number');
   const [unit, setUnit] = useState('');
@@ -136,7 +161,7 @@ function PageMetrics({ page }: { page: OpenPage }) {
 
   return (
     <div className="space-y-4">
-      <GithubCard pageId={page.dbId!} series={series} loading={loading} reload={reload} />
+      <GithubCard pageId={page.dbId!} series={series} loading={loading} reload={reload} onAddWidgets={addGithubWidgets} />
 
       {loading && <p className="text-sm text-gray-500">Loading…</p>}
       {list.map((m) => (

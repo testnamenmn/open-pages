@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { pagesApi } from '../utils/pagesApi';
 import { pageUrl } from '../utils/url';
 import { useAuth } from '../store/AuthContext';
+import { useBuilder } from '../store/BuilderContext';
 import { OpenPage } from '../types/schema';
 import {
   Plus,
@@ -24,6 +25,7 @@ export default function MyPages() {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { state: builderState, dispatch } = useBuilder();
 
   useEffect(() => {
     pagesApi.listMyPages().then(setPages).catch(() => setPages([]));
@@ -38,8 +40,17 @@ export default function MyPages() {
   };
 
   const handleEdit = (page: OpenPage) => {
-    // Load the page into the builder
-    localStorage.setItem('openpages_current', JSON.stringify(page));
+    // Load the page into the builder. The builder state lives for the whole session, so writing to
+    // localStorage alone is not enough. If it already holds this page, keep its unpublished edits.
+    if (builderState.page.id !== page.id) {
+      if (
+        builderState.page.widgets.length > 0 &&
+        !confirm('This replaces the page currently in the builder. Unpublished changes there will be lost. Continue?')
+      ) {
+        return;
+      }
+      dispatch({ type: 'LOAD_TEMPLATE', payload: page });
+    }
     navigate('/builder');
   };
 
